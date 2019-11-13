@@ -9,6 +9,7 @@ typedef struct REDE REDE_AUXILIAR;
 REDE_AUXILIAR* cria_rede();
 Vertice* retorna_primeira_tarefa(REDE_AUXILIAR* aux);
 Vertice* retorna_ultima_tarefa(REDE_AUXILIAR* aux);
+void caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre);
 
 //inserção e criação da rede
 void insere_tarefas(Grafo* redePert,FILE* conteudoRede,REDE_AUXILIAR* aux );

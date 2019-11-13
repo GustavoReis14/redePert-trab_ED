@@ -44,8 +44,6 @@ void grafo_libera (Grafo * grafo){
     free(grafo);
 }
 
-
-
 void grafo_libera_vertices (Vertice * primeiro_vertice){
     Vertice * v = primeiro_vertice;
     while (v!=NULL){
