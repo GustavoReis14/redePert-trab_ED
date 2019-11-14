@@ -18,7 +18,7 @@ int grafo_busca_aresta(Grafo * grafo, Vertice * vertice1, Vertice * vertice2);
 /*fun��es para cria��o de v�rtices*/
 Vertice * grafo_cria_vertice(Grafo * grafo, const char nome[]);
 Vertice * grafo_retorna_vertice(Grafo * grafo, int indice);
-Vertice * grafo_retorna_vertice_por_nome(Grafo* grafo, const char nome[]);
+
 
 /*fun��es para obten��o dos dados de v�rtices*/
 char * grafo_retorna_nome(Vertice * vertice);
@@ -27,3 +27,8 @@ char * grafo_retorna_nome(Vertice * vertice);
 
 /*fun��o para impress�o tabulada a partir de um v�rtice*/
 void grafo_imprime_tab (Grafo * grafo, Vertice * vertice);
+
+int grafo_marcado(Grafo* grafo, Vertice* vertice);
+void marca_grafo(Grafo* grafo, Vertice* vertice);
+Vertice * grafo_retorna_vertice_por_nome(Grafo* grafo, const char nome[]);
+Vertice* retorna_proximo(Grafo* grafo, Vertice* vertice);

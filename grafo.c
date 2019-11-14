@@ -17,6 +17,7 @@ struct vertice{
     Vertice * prox_vertice;
     struct aresta * primeira_aresta;
     struct aresta * ultima_aresta;
+    int marcado;
 };
 
 /*composi��o de um grafo*/
@@ -172,6 +173,7 @@ Vertice * grafo_cria_vertice(Grafo * grafo, const char nome[]){
     v->prox_vertice = NULL;
     v->primeira_aresta = NULL;
     v->ultima_aresta = NULL;
+    v->marcado = 0;
 
     if (grafo->ultimo_vertice!=NULL){
         grafo->ultimo_vertice->prox_vertice = v;
@@ -181,7 +183,7 @@ Vertice * grafo_cria_vertice(Grafo * grafo, const char nome[]){
         grafo->primeiro_vertice = v;
         grafo->ultimo_vertice = v;
     }
-
+    
     return v;
 }
 
@@ -244,6 +246,16 @@ void grafo_imprime_tab_ (Grafo * grafo, Vertice * vertice1, Vertice * vertice2, 
    tab-=1;
 }
 
+int grafo_marcado(Grafo* grafo, Vertice* vertice) {
+    return vertice->marcado;
+}
 
+void marca_grafo(Grafo* grafo, Vertice* vertice){
+    vertice->marcado = 1;
+}
 
-
+Vertice* retorna_proximo(Grafo* grafo, Vertice* vertice) {
+    Vertice* p = grafo->primeiro_vertice;
+    while(p != vertice) p = p->prox_vertice;
+    return p;
+}
