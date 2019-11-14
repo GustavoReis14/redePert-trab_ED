@@ -11,8 +11,7 @@ struct REDE{
     Vertice* ultima_tarefa;
     int temp;
     int caminho_critico;
-    char* caminho_critico_nome;
-    int cont_para_string;
+    int rota;
 };
 
 static void cria_tarefas(Grafo* redePert, FILE* conteudoRede, PERT* tarefa);
@@ -42,8 +41,7 @@ void insere_tarefas (Grafo* redePert,FILE* conteudoRede,REDE_AUXILIAR* aux ) {
     }
     aux->temp = 0;
     aux->caminho_critico = 0;
-    aux->cont_para_string = 1;
-    aux->caminho_critico_nome = (char*) malloc (aux->cont_para_string);
+    aux->rota = 0;
     fseek(conteudoRede, 0, SEEK_SET);
     cria_tarefas(redePert,conteudoRede,tarefa);
     seta_rede(redePert,conteudoRede,aux, tarefa);
@@ -152,34 +150,26 @@ Vertice* retorna_ultima_tarefa(REDE_AUXILIAR* aux) {
 
 void caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre) {
     int cont = 0;
-    aux->cont_para_string++;
-    aux->caminho_critico_nome = (char*) realloc (aux->caminho_critico_nome,aux->cont_para_string);
     Vertice ** caminhos = grafo_busca_vertices_saida(redePert, percorre, &cont);
     for (int i = 0; i < cont; i++){
         aux->temp += grafo_busca_aresta(redePert, percorre, caminhos[i]);
         if (!strcmp(grafo_retorna_nome(caminhos[i]),grafo_retorna_nome(retorna_ultima_tarefa(aux)))){
             if (aux->temp > aux->caminho_critico) {
                 aux->caminho_critico = aux->temp;
+                aux->rota++;
             }   
         }
-        printf("Vertices %s %s aresta %d\n", grafo_retorna_nome(percorre), grafo_retorna_nome(caminhos[i]), grafo_busca_aresta(redePert,percorre,caminhos[i]));
-        printf("%d temp ida\n",aux->temp);
+        //printf("Vertices %s %s aresta %d\n", grafo_retorna_nome(percorre), grafo_retorna_nome(caminhos[i]), grafo_busca_aresta(redePert,percorre,caminhos[i]));
+        //printf("%d temp ida\n",aux->temp);
         caminho_critico(redePert,aux, caminhos[i]);
         aux->temp -= grafo_busca_aresta(redePert, percorre, caminhos[i]);
-        printf("%d temp volta\n",aux->temp);
     }
-    if (aux->temp == 0) {
-        printf("Caminho critico = %dh\n",aux->caminho_critico);
+    if (aux->temp == 0) { 
+        printf("Tempo para o caminho critico %dh\n",aux->caminho_critico);
+        printf("caminho %d chegou no objetivo\n",aux->rota);
     }
 }
 
-/*if (!strcmp(grafo_retorna_nome(caminhos[i]),grafo_retorna_nome(retorna_ultima_tarefa(aux)))){
-            if (aux->temp > aux->caminho_critico) {
-                aux->caminho_critico = aux->temp;
-            }   
-        }
-        printf("de %s para %s\n",grafo_retorna_nome(percorre), grafo_retorna_nome(caminhos[i]));
-        printf("%i\n",aux->caminho_critico);
-        caminho_critico(redePert,aux, caminhos[i]);
-        aux->temp -= grafo_busca_aresta(redePert, percorre, caminhos[i]);
-        printf("%i\n",aux->caminho_critico);*/
+void rede_libera(REDE_AUXILIAR* aux) {
+    free(aux);
+}
