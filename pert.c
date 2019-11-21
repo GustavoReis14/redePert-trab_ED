@@ -6,18 +6,26 @@ typedef struct {
     int custo;
 }PERT;
 
+
 struct REDE{
     Vertice* primeira_tarefa;
     Vertice* ultima_tarefa;
     int temp;
     int caminho_critico;
     int rota;
+    int rota_temp;
+    int modifica_caminho;
+    char* nome_caminho;
+    int insert_nome;
 };
+//salvar dois caminhos e ir comparando os dois conforme adicionar o segundo
 
 static void cria_tarefas(Grafo* redePert, FILE* conteudoRede, PERT* tarefa);
 static int quantidade_de_tarefas(FILE* conteudoRede);
 static char* converte_para_string(char caracter);
 static void seta_rede(Grafo* redePert, FILE* conteudoRede, REDE_AUXILIAR* aux, PERT* tarefa);
+static void imprime_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre);
+static void trata_caminho(char* palavra);
 
 
 void insere_tarefas (Grafo* redePert,FILE* conteudoRede,REDE_AUXILIAR* aux ) {
@@ -42,6 +50,9 @@ void insere_tarefas (Grafo* redePert,FILE* conteudoRede,REDE_AUXILIAR* aux ) {
     aux->temp = 0;
     aux->caminho_critico = 0;
     aux->rota = 0;
+    aux->rota_temp = 0;
+    aux->nome_caminho = (char*) malloc (quantidade_de_tarefas(conteudoRede)*2);
+    aux->insert_nome = 0;
     fseek(conteudoRede, 0, SEEK_SET);
     cria_tarefas(redePert,conteudoRede,tarefa);
     seta_rede(redePert,conteudoRede,aux, tarefa);
@@ -148,28 +159,77 @@ Vertice* retorna_ultima_tarefa(REDE_AUXILIAR* aux) {
     return aux->ultima_tarefa;
 }
 
-void caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre) {
+void acha_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre) {
     int cont = 0;
     Vertice ** caminhos = grafo_busca_vertices_saida(redePert, percorre, &cont);
     for (int i = 0; i < cont; i++){
         aux->temp += grafo_busca_aresta(redePert, percorre, caminhos[i]);
         if (!strcmp(grafo_retorna_nome(caminhos[i]),grafo_retorna_nome(retorna_ultima_tarefa(aux)))){
+            aux->rota_temp++;
             if (aux->temp > aux->caminho_critico) {
                 aux->caminho_critico = aux->temp;
-                aux->rota++;
+                aux->rota = aux->rota_temp;
             }   
         }
-        //printf("Vertices %s %s aresta %d\n", grafo_retorna_nome(percorre), grafo_retorna_nome(caminhos[i]), grafo_busca_aresta(redePert,percorre,caminhos[i]));
-        //printf("%d temp ida\n",aux->temp);
-        caminho_critico(redePert,aux, caminhos[i]);
+        acha_caminho_critico(redePert,aux, caminhos[i]);
         aux->temp -= grafo_busca_aresta(redePert, percorre, caminhos[i]);
     }
     if (aux->temp == 0) { 
         printf("Tempo para o caminho critico %dh\n",aux->caminho_critico);
-        printf("caminho %d chegou no objetivo\n",aux->rota);
+        printf("Rota que chegou no objetivo %d\n",aux->rota);
+        aux->rota_temp = 0;
+        printa_caminho_critico(redePert,aux,percorre);
+        trata_caminho(aux->nome_caminho);
+        for (int i = 0; i < strlen(aux->nome_caminho);i++) {
+            printf("%c",aux->nome_caminho[i]);
+            if (i + 1 != strlen(aux->nome_caminho)) printf(" -> ");
+        }
+        printf("\n");
     }
 }
 
-void rede_libera(REDE_AUXILIAR* aux) {
+void rede_libera(Grafo* redePert,REDE_AUXILIAR* aux) {
+    grafo_libera(redePert);
+    free(aux->nome_caminho);
     free(aux);
+}
+
+void printa_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre){
+    int cont = 0;
+    Vertice ** caminhos = grafo_busca_vertices_saida(redePert, percorre, &cont);
+    for (int i = 0; i < cont; i++){
+        if (!strcmp(grafo_retorna_nome(caminhos[i]),grafo_retorna_nome(retorna_ultima_tarefa(aux)))){
+            aux->rota_temp++;
+            strcat(aux->nome_caminho, grafo_retorna_nome(caminhos[i]));
+        }
+        if (aux->rota_temp != aux->rota) printa_caminho_critico(redePert,aux, caminhos[i]);
+        if (aux->rota_temp == aux->rota  || aux->rota_temp == 0 ) {
+            strcat(aux->nome_caminho, grafo_retorna_nome(percorre));
+        }
+    }
+}
+
+static void trata_caminho(char* palavra) {
+    int i = 1;
+    int tamanho = strlen(palavra);
+    while (palavra[i] != '\0') {
+        if (palavra[i] == palavra[i - 1]) {
+            for (int j = i; j < tamanho;j++) {
+                palavra[j] = palavra[j + 1];
+            }
+        }
+        i++;
+    }
+    palavra[i] = '\0';
+    i = 0;
+    int j = strlen(palavra) - 1;
+
+    while (i < j) {
+        char temp = palavra[i];
+        palavra[i] = palavra[j];
+        palavra[j] = temp;
+        i++;
+        j--;
+    }
+    
 }

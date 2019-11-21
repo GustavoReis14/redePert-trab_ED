@@ -246,11 +246,11 @@ void grafo_imprime_tab_ (Grafo * grafo, Vertice * vertice1, Vertice * vertice2, 
    tab-=1;
 }
 
-int grafo_marcado(Grafo* grafo, Vertice* vertice) {
+int vertice_marcado(Vertice* vertice) {
     return vertice->marcado;
 }
 
-void marca_grafo(Grafo* grafo, Vertice* vertice){
+void marcar_vertice(Vertice* vertice){
     vertice->marcado = 1;
 }
 

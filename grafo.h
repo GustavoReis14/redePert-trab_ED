@@ -28,7 +28,7 @@ char * grafo_retorna_nome(Vertice * vertice);
 /*fun��o para impress�o tabulada a partir de um v�rtice*/
 void grafo_imprime_tab (Grafo * grafo, Vertice * vertice);
 
-int grafo_marcado(Grafo* grafo, Vertice* vertice);
-void marca_grafo(Grafo* grafo, Vertice* vertice);
+int vertice_marcado(Vertice* vertice);
+void marcar_vertice(Vertice* vertice);
 Vertice * grafo_retorna_vertice_por_nome(Grafo* grafo, const char nome[]);
 Vertice* retorna_proximo(Grafo* grafo, Vertice* vertice);
