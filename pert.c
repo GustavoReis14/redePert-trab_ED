@@ -18,7 +18,6 @@ struct REDE{
     char* nome_caminho;
     int insert_nome;
 };
-//salvar dois caminhos e ir comparando os dois conforme adicionar o segundo
 
 static void cria_tarefas(Grafo* redePert, FILE* conteudoRede, PERT* tarefa);
 static int quantidade_de_tarefas(FILE* conteudoRede);
@@ -210,20 +209,8 @@ void printa_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre
 }
 
 static void trata_caminho(char* palavra) {
-    int i = 1;
-    int tamanho = strlen(palavra);
-    while (palavra[i] != '\0') {
-        if (palavra[i] == palavra[i - 1]) {
-            for (int j = i; j < tamanho;j++) {
-                palavra[j] = palavra[j + 1];
-            }
-        }
-        i++;
-    }
-    palavra[i] = '\0';
-    i = 0;
+    int i = 0;
     int j = strlen(palavra) - 1;
-
     while (i < j) {
         char temp = palavra[i];
         palavra[i] = palavra[j];
@@ -231,5 +218,13 @@ static void trata_caminho(char* palavra) {
         i++;
         j--;
     }
-    
+    for(i = 0; i < strlen(palavra); i++) { //olhar
+  		for(j = i + 1; palavra[j] != '\0'; j++){
+  			if(palavra[j] == palavra[i])  {
+  				for(int k = j; palavra[k] != '\0'; k++) {
+					palavra[k] = palavra[k + 1];
+				}
+ 			}
+		}
+	}
 }
