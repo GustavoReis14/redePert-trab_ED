@@ -16,15 +16,24 @@ struct REDE{
     int rota_temp;
     int modifica_caminho;
     char* nome_caminho;
+    char* nome_dependencia;
+    char* novo_caminho;
     int insert_nome;
+    int n_dependencia;
+    int novo_critico;
+    int tam_nome;
 };
 
-static void cria_tarefas(Grafo* redePert, FILE* conteudoRede, PERT* tarefa);
+static void cria_tarefas(Grafo* redePert, FILE* conteudoRede, PERT* tarefa,REDE_AUXILIAR* aux);
 static int quantidade_de_tarefas(FILE* conteudoRede);
 static char* converte_para_string(char caracter);
 static void seta_rede(Grafo* redePert, FILE* conteudoRede, REDE_AUXILIAR* aux, PERT* tarefa);
 static void imprime_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre);
 static void trata_caminho(char* palavra);
+static void printa_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre);
+static void printa_novo_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre);
+static void remove_dependencia(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre);
+static void acha_novo_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre);
 
 
 void insere_tarefas (Grafo* redePert,FILE* conteudoRede,REDE_AUXILIAR* aux ) {
@@ -51,9 +60,12 @@ void insere_tarefas (Grafo* redePert,FILE* conteudoRede,REDE_AUXILIAR* aux ) {
     aux->rota = 0;
     aux->rota_temp = 0;
     aux->nome_caminho = (char*) malloc (quantidade_de_tarefas(conteudoRede)*2);
+    aux->nome_dependencia = (char*) malloc (quantidade_de_tarefas(conteudoRede)*2);
     aux->insert_nome = 0;
+    aux->n_dependencia = 0;
+    aux->tam_nome = quantidade_de_tarefas(conteudoRede)*2;
     fseek(conteudoRede, 0, SEEK_SET);
-    cria_tarefas(redePert,conteudoRede,tarefa);
+    cria_tarefas(redePert,conteudoRede,tarefa,aux);
     seta_rede(redePert,conteudoRede,aux, tarefa);
     fclose(conteudoRede);
 }
@@ -78,7 +90,7 @@ static int quantidade_de_tarefas(FILE* conteudoRede) {
     return cont;
 }
 
-static void cria_tarefas(Grafo* redePert, FILE* conteudoRede, PERT* tarefa){
+static void cria_tarefas(Grafo* redePert, FILE* conteudoRede, PERT* tarefa, REDE_AUXILIAR* aux){
     int qt_tarefa = quantidade_de_tarefas(conteudoRede);
     char nomes_das_tarefas[qt_tarefa * 2];
     int cont = 0;
@@ -105,6 +117,10 @@ static void cria_tarefas(Grafo* redePert, FILE* conteudoRede, PERT* tarefa){
     for (int i = 0; i < qt_tarefa; i++) {
         char* nome_origem = converte_para_string(tarefa[i].origem);
         char* nome_chegada = converte_para_string(tarefa[i].destino);
+        if (tarefa[i].custo == 0) {
+            aux->nome_dependencia[aux->n_dependencia] = tarefa[i].origem;
+            aux->n_dependencia++;
+        }
         grafo_insere_aresta (redePert, grafo_retorna_vertice_por_nome(redePert, nome_origem), grafo_retorna_vertice_por_nome(redePert, nome_chegada), tarefa[i].custo);
         //printf("Aresta criada entra %s %s com o peso %i \n", nome_origem, nome_chegada, tarefa[i].custo);
         free(nome_origem);
@@ -160,6 +176,8 @@ Vertice* retorna_ultima_tarefa(REDE_AUXILIAR* aux) {
 
 void acha_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre) {
     int cont = 0;
+    static int chamada = 0;
+    chamada++;
     Vertice ** caminhos = grafo_busca_vertices_saida(redePert, percorre, &cont);
     for (int i = 0; i < cont; i++){
         aux->temp += grafo_busca_aresta(redePert, percorre, caminhos[i]);
@@ -173,9 +191,11 @@ void acha_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre) 
         acha_caminho_critico(redePert,aux, caminhos[i]);
         aux->temp -= grafo_busca_aresta(redePert, percorre, caminhos[i]);
     }
-    if (aux->temp == 0) { 
+    chamada--;
+    if (chamada == 0) { 
         printf("Tempo para o caminho critico %dh\n",aux->caminho_critico);
-        printf("Rota que chegou no objetivo %d\n",aux->rota);
+        //printf("Rota que chegou no objetivo %d\n",aux->rota);
+        //printf("Numero de dependencia no caminho = %d\nNome da(s) dependencia(s) : %s\n",aux->n_dependencia,aux->nome_dependencia);
         aux->rota_temp = 0;
         printa_caminho_critico(redePert,aux,percorre);
         trata_caminho(aux->nome_caminho);
@@ -184,16 +204,18 @@ void acha_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre) 
             if (i + 1 != strlen(aux->nome_caminho)) printf(" -> ");
         }
         printf("\n");
+        remove_dependencia(redePert,aux,percorre);
     }
 }
 
 void rede_libera(Grafo* redePert,REDE_AUXILIAR* aux) {
     grafo_libera(redePert);
     free(aux->nome_caminho);
+    free(aux->novo_caminho);
     free(aux);
 }
 
-void printa_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre){
+static void printa_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre){
     int cont = 0;
     Vertice ** caminhos = grafo_busca_vertices_saida(redePert, percorre, &cont);
     for (int i = 0; i < cont; i++){
@@ -218,13 +240,84 @@ static void trata_caminho(char* palavra) {
         i++;
         j--;
     }
-    for(i = 0; i < strlen(palavra); i++) { //olhar
-  		for(j = i + 1; palavra[j] != '\0'; j++){
-  			if(palavra[j] == palavra[i])  {
-  				for(int k = j; palavra[k] != '\0'; k++) {
-					palavra[k] = palavra[k + 1];
-				}
- 			}
-		}
-	}
+    int cont = 0;
+
+    while (cont < strlen(palavra)) {
+        for(i = 0; i < strlen(palavra); i++) {
+            for(j = i + 1; palavra[j] != '\0'; j++){
+                if(palavra[j] == palavra[i])  {
+                    for(int k = j; palavra[k] != '\0'; k++) {
+                        palavra[k] = palavra[k + 1];
+                    }
+                }
+            }
+	    }
+        cont++;
+    }
+    
+    
+}
+
+static void remove_dependencia(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre) {
+    if (aux->n_dependencia == 0) {
+        printf("A rede pert nao possui dependencias\n");
+        return;
+    }
+    aux->novo_critico = 0;
+    aux->temp = 0;
+    aux->rota = 0;
+    aux->rota_temp = 0;
+    aux->novo_caminho = (char*) malloc (aux->tam_nome);
+    acha_novo_caminho_critico(redePert,aux,retorna_primeira_tarefa(aux));
+}
+
+static void acha_novo_caminho_critico(Grafo* redePert, REDE_AUXILIAR* aux, Vertice* percorre){
+    int cont = 0;
+    static int chamada = 0;
+    chamada++;
+    Vertice ** caminhos = grafo_busca_vertices_saida(redePert, percorre, &cont);
+    for (int i = 0; i < cont; i++){
+        aux->temp += grafo_busca_aresta(redePert, percorre, caminhos[i]);
+        if (grafo_busca_aresta(redePert, percorre, caminhos[i]) == 0) continue;
+        if (!strcmp(grafo_retorna_nome(caminhos[i]),grafo_retorna_nome(retorna_ultima_tarefa(aux)))){
+            aux->rota_temp++;
+            if (aux->temp > aux->novo_critico) {
+                aux->novo_critico = aux->temp;
+                aux->rota = aux->rota_temp;
+            }   
+        }
+        acha_novo_caminho_critico(redePert,aux, caminhos[i]);
+        aux->temp -= grafo_busca_aresta(redePert, percorre, caminhos[i]);
+    }
+    chamada--;
+    if (chamada == 0) {
+        aux->rota_temp = 0;
+        printa_novo_caminho_critico(redePert,aux,percorre);
+        trata_caminho(aux->novo_caminho);
+        if (!strstr(aux->novo_caminho,aux->nome_caminho)) {
+            printf("Tempo para o NOVO caminho critico %dh\n",aux->novo_critico);
+            for (int i = 0; i < strlen(aux->novo_caminho);i++) {
+                if (aux->novo_caminho[i] >= 65 && aux->novo_caminho[i] <= 90)printf("%c",aux->novo_caminho[i]);
+                else break;
+                if (i + 1 != strlen(aux->novo_caminho)) printf(" -> ");
+            }
+            printf("\n");
+        }else printf("A remoção de dependencias não altera o caminho critico!\n");
+    } 
+}
+
+static void printa_novo_caminho_critico(Grafo* redePert,REDE_AUXILIAR* aux,Vertice* percorre){
+    int cont = 0;
+    Vertice ** caminhos = grafo_busca_vertices_saida(redePert, percorre, &cont);
+    for (int i = 0; i < cont; i++){
+        if (grafo_busca_aresta(redePert, percorre, caminhos[i]) == 0) continue;
+        if (!strcmp(grafo_retorna_nome(caminhos[i]),grafo_retorna_nome(retorna_ultima_tarefa(aux)))){
+            aux->rota_temp++;
+            strcat(aux->novo_caminho, grafo_retorna_nome(caminhos[i]));
+        }
+        if (aux->rota_temp != aux->rota) printa_novo_caminho_critico(redePert,aux, caminhos[i]);
+        if (aux->rota_temp == aux->rota  || aux->rota_temp == 0 ) {
+            strcat(aux->novo_caminho, grafo_retorna_nome(percorre));
+        }
+    }
 }
